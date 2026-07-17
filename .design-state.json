@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "updatedAt": "2026-07-16T14:04:43.641Z",
+  "execution": {
+    "status": "ready_to_present",
+    "lastLintCheckedAt": "2026-07-16T14:04:07.010Z",
+    "lastLintSummary": {
+      "p0": 0,
+      "p1": 9,
+      "p2": 8,
+      "fileCount": 5,
+      "checkedAt": "2026-07-16T14:04:07.010Z"
+    },
+    "tweaksStatus": "provided",
+    "tweaksCount": 4,
+    "nudgeControlSummary": {
+      "total": 4,
+      "color": 1,
+      "nonColor": 3,
+      "slider": 2,
+      "select": 0,
+      "lightTheme": 1,
+      "darkTheme": 1
+    },
+    "noNonColorNudgesReason": "The Nudge set includes non-color controls: Border Radius (slider) and Typography Scale (slider) alongside the Appearance preset and Primary Color.",
+    "buildStatus": "passed",
+    "buildCommand": "npm run build",
+    "buildSummary": "Build passed successfully. Output: 32.87 KB CSS + 368.36 KB JS (gzipped: 6.67 KB + 101.23 KB).",
+    "completedAt": "2026-07-16T14:04:43.641Z"
+  },
+  "designPlan": {
+    "status": "cancelled",
+    "cancelledAt": "2026-07-16T13:52:56.844Z",
+    "directExecutionRequested": true,
+    "directExecutionReason": "直接执行",
+    "directExecutionAt": "2026-07-16T13:52:56.844Z"
+  }
+}

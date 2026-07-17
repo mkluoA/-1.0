@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+:root {
+  --seed-bg: #ffffff;
+  --seed-fg: #0a0a0a;
+  --seed-primary: #2563eb;
+  --seed-surface: #f1f5f9;
+  --seed-radius: 8px;
+  --seed-font-size: 16px;
+}
+
+@theme {
+  --color-background: var(--seed-bg);
+  --color-foreground: var(--seed-fg);
+  --color-card: var(--seed-bg);
+  --color-card-foreground: var(--seed-fg);
+  --color-popover: var(--seed-bg);
+  --color-popover-foreground: var(--seed-fg);
+  --color-primary: var(--seed-primary);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: var(--seed-surface);
+  --color-secondary-foreground: #0f172a;
+  --color-muted: var(--seed-surface);
+  --color-muted-foreground: #64748b;
+  --color-accent: var(--seed-surface);
+  --color-accent-foreground: #0f172a;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #e2e8f0;
+  --color-input: #e2e8f0;
+  --color-ring: var(--seed-primary);
+  --radius-sm: calc(var(--seed-radius) * 0.5);
+  --radius-md: var(--seed-radius);
+  --radius-lg: calc(var(--seed-radius) * 1.5);
+  --radius-xl: calc(var(--seed-radius) * 2);
+  --font-sans: 'Inter', 'SF Pro Display', system-ui, -apple-system, sans-serif;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-size: var(--seed-font-size);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}

@@ -1,0 +1,162 @@
+{
+  "designSystemApproved": false,
+  "activePage": "index.html",
+  "version": 1,
+  "createdAt": "2026-07-16T14:02:26.230Z",
+  "updatedAt": "2026-07-17T12:45:10.680Z",
+  "frames": [
+    {
+      "id": "frame",
+      "kind": "localhost",
+      "title": "电箱通 - 工作台",
+      "url": "http://127.0.0.1:5173/dashboard",
+      "designUrl": "http://127.0.0.1:5173/dashboard/canvas-design.html",
+      "previewUrl": "http://127.0.0.1:5173/dashboard",
+      "route": "/dashboard",
+      "code": {
+        "root": "react-vite",
+        "route": "/dashboard",
+        "files": [
+          {
+            "path": "src/App.jsx",
+            "role": "entry"
+          },
+          {
+            "path": "src/main.jsx",
+            "role": "entry"
+          },
+          {
+            "path": "src/index.css",
+            "role": "style"
+          },
+          {
+            "path": "src/pages/LandingPage.jsx",
+            "role": "route",
+            "symbol": "LandingPage"
+          },
+          {
+            "path": "src/pages/DashboardPage.jsx",
+            "role": "route",
+            "symbol": "DashboardPage"
+          }
+        ],
+        "devServer": {
+          "command": "npm run dev -- --host 127.0.0.1 --port 5173 --strictPort",
+          "port": 5173,
+          "url": "http://127.0.0.1:5173/"
+        }
+      },
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 900,
+      "status": "active",
+      "source": "imported",
+      "createdAt": "2026-07-16T14:24:36.792Z",
+      "updatedAt": "2026-07-16T14:24:36.792Z"
+    }
+  ],
+  "tweaks": [
+    {
+      "control": "preset",
+      "label": "Appearance",
+      "presetOptions": [
+        {
+          "label": "Light",
+          "patches": [
+            {
+              "value": "#ffffff",
+              "variable": "--seed-bg"
+            },
+            {
+              "value": "#0a0a0a",
+              "variable": "--seed-fg"
+            },
+            {
+              "value": "#2563eb",
+              "variable": "--seed-primary"
+            },
+            {
+              "value": "#f1f5f9",
+              "variable": "--seed-surface"
+            }
+          ],
+          "value": "light"
+        },
+        {
+          "label": "Dark",
+          "patches": [
+            {
+              "value": "#0a0a0a",
+              "variable": "--seed-bg"
+            },
+            {
+              "value": "#fafafa",
+              "variable": "--seed-fg"
+            },
+            {
+              "value": "#3b82f6",
+              "variable": "--seed-primary"
+            },
+            {
+              "value": "#1e293b",
+              "variable": "--seed-surface"
+            }
+          ],
+          "value": "dark"
+        },
+        {
+          "label": "Engineering Blue",
+          "patches": [
+            {
+              "value": "#f8fafc",
+              "variable": "--seed-bg"
+            },
+            {
+              "value": "#0f172a",
+              "variable": "--seed-fg"
+            },
+            {
+              "value": "#1d4ed8",
+              "variable": "--seed-primary"
+            },
+            {
+              "value": "#e2e8f0",
+              "variable": "--seed-surface"
+            }
+          ],
+          "value": "engineering"
+        }
+      ],
+      "value": "light",
+      "variable": "--appearance-preset"
+    },
+    {
+      "control": "color",
+      "label": "Primary Color",
+      "value": "#2563eb",
+      "variable": "--seed-primary"
+    },
+    {
+      "control": "slider",
+      "label": "Border Radius",
+      "max": 16,
+      "min": 0,
+      "step": 2,
+      "unit": "px",
+      "value": "8px",
+      "variable": "--seed-radius"
+    },
+    {
+      "control": "slider",
+      "label": "Typography Scale",
+      "max": 18,
+      "min": 12,
+      "step": 1,
+      "unit": "px",
+      "value": "16px",
+      "variable": "--seed-font-size"
+    }
+  ],
+  "activeFrameId": "frame"
+}

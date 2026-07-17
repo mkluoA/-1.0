@@ -1,0 +1,33 @@
+# Vite cache
+.vite/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.sw?
+
+# Workspace temp files
+uploads/
+*.png
+*.jpg
+*.jpeg
+outputs/
+
+# Keep outputs DESIGN.md
+!outputs/DESIGN.md
