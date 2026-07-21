@@ -19,8 +19,8 @@
  */
 import * as pdfjsLib from 'pdfjs-dist'
 
-/* 百度 OCR 代理地址（内嵌在 Vite dev server 中） */
-const OCR_PROXY_URL = '/api/ocr'
+/* 百度 OCR 代理地址（Vite 启动时自动启动） */
+const OCR_PROXY_URL = 'http://127.0.0.1:3001/api/ocr'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`
@@ -83,26 +83,31 @@ function preprocessCanvas(canvas) {
 
 /* ── 百度 OCR (含位置) ── */
 async function ocrWithPositions(canvas, onProgress) {
-  // 将 canvas 转为 base64
-  const base64 = canvas.toDataURL('image/jpeg', 0.92).split(',')[1]
+  // 将 canvas 转为 base64（降低质量以控制大小）
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.7)
+  const base64 = dataUrl.split(',')[1]
+  console.log('[OCR] Image base64 size:', Math.round(base64.length / 1024), 'KB')
 
   if (onProgress) onProgress(0.3)
 
-  const res = await fetch(OCR_PROXY_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ image: base64 }),
-  })
+  try {
+    const res = await fetch(OCR_PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: base64 }),
+    })
 
-  if (onProgress) onProgress(0.8)
+    if (onProgress) onProgress(0.8)
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err.error || 'OCR 请求失败: ' + res.status)
-  }
+    if (!res.ok) {
+      const text = await res.text()
+      console.error('[OCR] HTTP error:', res.status, text)
+      throw new Error('OCR 请求失败: HTTP ' + res.status)
+    }
 
-  const data = await res.json()
-  if (data.error_code) throw new Error('百度 OCR 错误: ' + data.error_msg)
+    const data = await res.json()
+    console.log('[OCR] Baidu response:', data.words_result_num, 'words')
+    if (data.error_code) throw new Error('百度 OCR 错误: ' + data.error_msg + ' (' + data.error_code + ')')
 
   // 百度 OCR 返回格式 → 统一 word 格式
   const words = (data.words_result || []).map(w => {
@@ -120,9 +125,13 @@ async function ocrWithPositions(canvas, onProgress) {
 
   const fullText = words.map(w => w.text).join(' ')
 
-  if (onProgress) onProgress(1)
+    if (onProgress) onProgress(1)
 
-  return { words, fullText: clean(fullText) }
+    return { words, fullText: clean(fullText) }
+  } catch (e) {
+    console.error('[OCR] Exception:', e)
+    throw e
+  }
 }
 
 /* ── 空间聚类: word → 行 ── */
