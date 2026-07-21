@@ -59,6 +59,26 @@ async function renderPage(file, pageNum = 1, scale = 3) {
   return { canvas, numPages }
 }
 
+/* ── 图像预处理: 灰度化 + 二值化 (提高 OCR 准确率) ── */
+function preprocessCanvas(canvas) {
+  const ctx = canvas.getContext('2d')
+  const { width, height } = canvas
+  const imageData = ctx.getImageData(0, 0, width, height)
+  const data = imageData.data
+
+  // 灰度化 + 二值化 (阈值 180: 浅灰→白, 深灰→黑)
+  for (let i = 0; i < data.length; i += 4) {
+    const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114
+    const bw = gray < 180 ? 0 : 255
+    data[i] = bw
+    data[i + 1] = bw
+    data[i + 2] = bw
+  }
+
+  ctx.putImageData(imageData, 0, 0)
+  return canvas
+}
+
 /* ── OCR with word positions ── */
 async function ocrWithPositions(canvas, onProgress) {
   const result = await Tesseract.recognize(canvas, 'chi_sim+eng', {
@@ -502,6 +522,9 @@ export function generateMarkdown(parsed) {
 export async function recognizeFromPDF(file, onProgress) {
   if (onProgress) onProgress('rendering', 1, 1)
   const { canvas } = await renderPage(file, 1, 3)
+
+  // 图像预处理: 灰度化 + 二值化，提高 OCR 准确率
+  preprocessCanvas(canvas)
 
   if (onProgress) onProgress('ocr', 1, 1)
   const { words, fullText } = await ocrWithPositions(canvas, (p) => {
