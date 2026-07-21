@@ -427,6 +427,19 @@ function BoxDetail({ box, files, onViewFile, ...qoderProps }) {
         </Card>
       )}
 
+      {/* Markdown 识别报告 */}
+      {box.markdownReport && (
+        <Card className="p-4 bg-white border-neutral-200 mb-4" data-qoder-id="qel-p-4-4cdf6423" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-p-4-4cdf6423&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;p-4&quot;,&quot;loc&quot;:{&quot;line&quot;:432,&quot;column&quot;:9}}">
+          <div className="flex items-center gap-2 mb-2" data-qoder-id="qel-flex-c8e6e777" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-flex-c8e6e777&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;flex&quot;,&quot;loc&quot;:{&quot;line&quot;:433,&quot;column&quot;:11}}">
+            <FileText className="w-4 h-4 text-neutral-600"  data-qoder-id="qel-w-4-d85d2da7" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-w-4-d85d2da7&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;w-4&quot;,&quot;loc&quot;:{&quot;line&quot;:434,&quot;column&quot;:13}}"/>
+            <span className="text-sm font-medium text-neutral-800" data-qoder-id="qel-text-sm-6380a9f9" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-text-sm-6380a9f9&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;text-sm&quot;,&quot;loc&quot;:{&quot;line&quot;:435,&quot;column&quot;:13}}">识别报告（Markdown）</span>
+          </div>
+          <pre className="p-3 bg-neutral-50 border border-neutral-200 rounded text-[11px] leading-relaxed max-h-[500px] overflow-auto whitespace-pre-wrap font-mono text-neutral-700" data-qoder-id="qel-p-3-07a3bcdd" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-p-3-07a3bcdd&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;p-3&quot;,&quot;loc&quot;:{&quot;line&quot;:437,&quot;column&quot;:11}}">
+{box.markdownReport}
+          </pre>
+        </Card>
+      )}
+
                   {/* OCR Details - 三层结构化 */}
       {box.parsed && (() => {
         const p = box.parsed

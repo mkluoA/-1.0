@@ -404,6 +404,100 @@ function buildTree(parsed, fileName) {
   return box
 }
 
+/* ── 生成 Markdown 识别报告 ── */
+export function generateMarkdown(parsed) {
+  const p = parsed
+  const fmtCable = (c) => c ? (c.型号 + (c.芯数截面 ? '-' + c.芯数截面 : '') + (c.敷设方式 ? '-' + c.敷设方式 : '')) : '-'
+  const lines = []
+
+  lines.push('## 配电箱识别报告')
+  lines.push('')
+
+  // 1. 箱体信息
+  lines.push('### 1. 箱体信息')
+  lines.push('')
+  lines.push('| 项目 | 内容 |')
+  lines.push('|------|------|')
+  lines.push(`| 箱号 | ${p.箱体信息.箱号 || '-'} |`)
+  lines.push(`| 名称 | ${p.箱体信息.箱名称 || '-'} |`)
+  if (p.箱体信息.图号名称) lines.push(`| 图号名称 | ${p.箱体信息.图号名称} |`)
+  if (p.箱体信息.安装方式) lines.push(`| 安装方式 | ${p.箱体信息.安装方式} |`)
+  if (p.箱体信息.防护等级) lines.push(`| 防护等级 | ${p.箱体信息.防护等级} |`)
+  if (p.箱体信息.数量) lines.push(`| 数量 | ${p.箱体信息.数量} |`)
+  if (p.箱体信息.备注) lines.push(`| 备注 | ${p.箱体信息.备注} |`)
+  lines.push('')
+
+  // 2. 进线信息
+  lines.push('### 2. 进线信息')
+  lines.push('')
+  lines.push('| 项目 | 内容 |')
+  lines.push('|------|------|')
+  for (const [k, v] of Object.entries(p.进线信息.负荷参数)) {
+    lines.push(`| ${k} | ${v} |`)
+  }
+  if (p.进线信息.主开关.型号) {
+    lines.push(`| 主开关 | ${p.进线信息.主开关.型号} |`)
+  }
+  if (p.进线信息.主开关.特性) {
+    lines.push(`| 开关特性 | ${p.进线信息.主开关.特性} |`)
+  }
+  lines.push(`| 主用回路编号 | ${p.进线信息.主用回路.回路编号 || '-'} |`)
+  lines.push(`| 主用电缆 | ${fmtCable(p.进线信息.主用回路.电缆规格)} |`)
+  lines.push(`| 备用回路编号 | ${p.进线信息.备用回路.回路编号 || '-'} |`)
+  lines.push(`| 备用电缆 | ${fmtCable(p.进线信息.备用回路.电缆规格)} |`)
+  if (p.进线信息.监控回路_非负荷) {
+    const m = p.进线信息.监控回路_非负荷
+    lines.push(`| 监控回路（非负荷） | ${m.电缆} → ${m.端子} → ${m.用途} |`)
+  }
+  lines.push('')
+
+  // 3. 支路信息 - MCCB
+  lines.push('### 3. 支路信息')
+  lines.push('')
+  if (p.支路信息.主回路下级_送下级箱_MCCB.length > 0) {
+    lines.push('#### MCCB 回路（送下级配电箱）')
+    lines.push('')
+    lines.push('| 回路编号 | 末端箱号 | 开关规格 | 额定电流 | 漏保 | 电能表 | 电缆规格 | 功率 |')
+    lines.push('|----------|----------|----------|----------|------|--------|----------|------|')
+    for (const b of p.支路信息.主回路下级_送下级箱_MCCB) {
+      lines.push(`| ${b.回路编号 || '-'} | ${b.末端箱号 || '-'} | ${b.开关规格 || '-'} | ${b.开关额定电流 || '-'} | 否 | ${b.电能表 || '-'} | ${fmtCable(b.电缆规格)} | ${b.末端功率 || '-'} |`)
+    }
+    lines.push('')
+  }
+
+  // MCB 末端设备
+  if (p.支路信息.末端设备支路_MCB.length > 0) {
+    lines.push('#### MCB 支路（末端设备）')
+    lines.push('')
+    lines.push('| 回路编号 | 开关规格 | 漏保 | 相线 | 电缆规格 | 末端名称 | 备注 |')
+    lines.push('|----------|----------|------|------|----------|----------|------|')
+    for (const b of p.支路信息.末端设备支路_MCB) {
+      const leakage = b.带漏保 ? `${b.漏保规格} ✓` : '-'
+      const endNote = b.末端功率 ? b.末端功率 : (b.末端类型 === '备用回路' ? '备用' : (b.末端箱号 ? '送下级 ' + b.末端箱号 : ''))
+      lines.push(`| ${b.回路编号} | ${b.开关规格 || '-'} | ${leakage} | ${b.相线 || '-'} | ${fmtCable(b.电缆规格)} | ${b.末端名称 || '-'} | ${endNote} |`)
+    }
+    lines.push('')
+  }
+
+  // 接地方式
+  if (p.接地方式) {
+    lines.push(`**接地方式**：${p.接地方式}`)
+    lines.push('')
+  }
+
+  // 易错点自查
+  lines.push('---')
+  lines.push('**易错点自查**：')
+  lines.push(`- 主/备回路编号：${p.进线信息.主用回路.回路编号 || '未识别'} / ${p.进线信息.备用回路.回路编号 || '未识别'}（已分开记录）`)
+  lines.push(`- 电能表 vs 开关电流：已区分（电能表为括号格式如 10(4.0)A）`)
+  lines.push(`- 多截面电缆：未相加，原样记录`)
+  lines.push(`- 下级箱号：${p.支路信息.主回路下级_送下级箱_MCCB.map(b => b.末端箱号).filter(Boolean).join(', ') || '无'}`)
+  lines.push(`- 监控回路：${p.进线信息.监控回路_非负荷 ? '已单独记录（非负荷）' : '未检测到'}`)
+  lines.push(`- 备用支路：${p.支路信息.末端设备支路_MCB.filter(b => b.末端类型 === '备用回路').map(b => b.回路编号).join(', ') || '无'}`)
+
+  return lines.join('\n')
+}
+
 /* ── Main entry ── */
 export async function recognizeFromPDF(file, onProgress) {
   if (onProgress) onProgress('rendering', 1, 1)
@@ -418,6 +512,8 @@ export async function recognizeFromPDF(file, onProgress) {
   const lines = clusterLines(words)
   const parsed = parseThreeLayers(lines, fullText)
   const box = buildTree(parsed, file.name)
+  const markdown = generateMarkdown(parsed)
+  box.markdownReport = markdown
 
   return [box]
 }
