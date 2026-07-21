@@ -18,7 +18,9 @@
  *   - 备用支路不遗漏
  */
 import * as pdfjsLib from 'pdfjs-dist'
-import Tesseract from 'tesseract.js'
+
+/* 百度 OCR 代理地址 */
+const OCR_PROXY_URL = 'http://127.0.0.1:3001/api/ocr'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`
@@ -79,21 +81,48 @@ function preprocessCanvas(canvas) {
   return canvas
 }
 
-/* ── OCR with word positions ── */
+/* ── 百度 OCR (含位置) ── */
 async function ocrWithPositions(canvas, onProgress) {
-  const result = await Tesseract.recognize(canvas, 'chi_sim+eng', {
-    logger: (m) => {
-      if (onProgress && m.status === 'recognizing text') onProgress(m.progress)
-    },
+  // 将 canvas 转为 base64
+  const base64 = canvas.toDataURL('image/jpeg', 0.92).split(',')[1]
+
+  if (onProgress) onProgress(0.3)
+
+  const res = await fetch(OCR_PROXY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ image: base64 }),
   })
-  const words = (result.data.words || []).map(w => ({
-    text: clean(w.text),
-    x: w.bbox.x0, y: w.bbox.y0,
-    x2: w.bbox.x1, y2: w.bbox.y1,
-    cx: (w.bbox.x0 + w.bbox.x1) / 2,
-    cy: (w.bbox.y0 + w.bbox.y1) / 2,
-  })).filter(w => w.text.length > 0)
-  return { words, fullText: clean(result.data.text) }
+
+  if (onProgress) onProgress(0.8)
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || 'OCR 请求失败: ' + res.status)
+  }
+
+  const data = await res.json()
+  if (data.error_code) throw new Error('百度 OCR 错误: ' + data.error_msg)
+
+  // 百度 OCR 返回格式 → 统一 word 格式
+  const words = (data.words_result || []).map(w => {
+    const loc = w.location || {}
+    return {
+      text: clean(w.words),
+      x: loc.left || 0,
+      y: loc.top || 0,
+      x2: (loc.left || 0) + (loc.width || 0),
+      y2: (loc.top || 0) + (loc.height || 0),
+      cx: (loc.left || 0) + (loc.width || 0) / 2,
+      cy: (loc.top || 0) + (loc.height || 0) / 2,
+    }
+  }).filter(w => w.text.length > 0)
+
+  const fullText = words.map(w => w.text).join(' ')
+
+  if (onProgress) onProgress(1)
+
+  return { words, fullText: clean(fullText) }
 }
 
 /* ── 空间聚类: word → 行 ── */
