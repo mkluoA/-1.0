@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import CADViewer from '@/components/CADViewer'
+import { recognizeFromPDF } from '@/services/ocrService'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -9,7 +10,7 @@ import {
   Search, Download, Plus, FolderOpen, Trash2,
   CheckCircle2, AlertCircle, MoreHorizontal, X,
   Settings, Bell, Layers, Eye, ArrowLeft, Home,
-  Box, FileImage, File, ZoomIn, ZoomOut
+  Box, CircuitBoard, FileImage, File, ZoomIn, ZoomOut
 } from 'lucide-react'
 
 /* ─── helpers ─── */
@@ -208,37 +209,67 @@ function ProcessingView({ files, onDone, ...qoderProps }) {
     }))
   )
   const doneRef = useRef(false)
+  const resultsRef = useRef([])
 
   useEffect(() => {
-    const timers = []
-    items.forEach((item, idx) => {
-      let prog = 0
-      const uploadTimer = setInterval(() => {
-        prog += Math.random() * 30 + 15
-        if (prog >= 100) {
-          prog = 100
-          clearInterval(uploadTimer)
-          setItems(prev => prev.map((x, j) => j === idx ? { ...x, progress: 100, status: 'ai' } : x))
-          // AI steps
-          const steps = ['解析文件结构...', '识别配电箱编号与名称...', '提取层级关系...', '完成']
-          let si = 0
-          const aiTimer = setInterval(() => {
-            if (si >= steps.length) { clearInterval(aiTimer); return }
-            const step = steps[si]
-            const isLast = si === steps.length - 1
+    let cancelled = false
+
+    const processAll = async () => {
+      for (let idx = 0; idx < files.length; idx++) {
+        if (cancelled) return
+        const file = files[idx]
+        const cat = getFileCategory(file.name)
+
+        setItems(prev => prev.map((x, j) => j === idx ? { ...x, status: 'ai', aiStep: '渲染图纸...' } : x))
+
+        try {
+          if (cat === 'pdf') {
+            const boxes = await recognizeFromPDF(file, (stage, page, total, p) => {
+              if (cancelled) return
+              const stepMap = {
+                'rendering': `渲染第 ${page}/${total} 页...`,
+                'ocr': `OCR 识别第 ${page}/${total} 页...`,
+                'ocr-progress': `识别中 ${Math.round((p || 0) * 100)}%...`,
+                'parsing': `解析配电箱信息...`,
+              }
+              const step = stepMap[stage] || '处理中...'
+              const progress = stage === 'ocr-progress' ? Math.round((p || 0) * 100) : undefined
+              setItems(prev => prev.map((x, j) =>
+                j === idx ? { ...x, aiStep: step, status: 'ai', progress: progress ?? x.progress } : x
+              ))
+            })
+            if (!cancelled) {
+              resultsRef.current = [...resultsRef.current, ...boxes]
+              setItems(prev => prev.map((x, j) =>
+                j === idx ? { ...x, status: 'done', aiStep: '识别完成', progress: 100 } : x
+              ))
+            }
+          } else {
+            // Non-PDF files: skip OCR, use filename-based placeholder
+            if (!cancelled) {
+              setItems(prev => prev.map((x, j) =>
+                j === idx ? { ...x, status: 'done', aiStep: '该格式暂需手动录入', progress: 100 } : x
+              ))
+            }
+          }
+        } catch (err) {
+          console.error('OCR error for', file.name, err)
+          if (!cancelled) {
             setItems(prev => prev.map((x, j) =>
-              j === idx ? { ...x, aiStep: step, status: isLast ? 'done' : 'ai' } : x
+              j === idx ? { ...x, status: 'done', aiStep: '识别失败：' + (err.message || '未知错误'), progress: 100 } : x
             ))
-            si++
-          }, 600 + Math.random() * 400)
-          timers.push(aiTimer)
-        } else {
-          setItems(prev => prev.map((x, j) => j === idx ? { ...x, progress: Math.min(prog, 100) } : x))
+          }
         }
-      }, 200 + Math.random() * 150)
-      timers.push(uploadTimer)
-    })
-    return () => timers.forEach(clearInterval)
+      }
+
+      if (!cancelled) {
+        setItems(prev => prev.map(x => ({ ...x, status: 'done', progress: 100 })))
+      }
+    }
+
+    processAll()
+
+    return () => { cancelled = true }
   }, []) // eslint-disable-line
 
   const allDone = items.every(x => x.status === 'done')
@@ -246,7 +277,7 @@ function ProcessingView({ files, onDone, ...qoderProps }) {
   useEffect(() => {
     if (allDone && !doneRef.current) {
       doneRef.current = true
-      const t = setTimeout(onDone, 500)
+      const t = setTimeout(() => onDone(resultsRef.current), 500)
       return () => clearTimeout(t)
     }
   }, [allDone, onDone])
@@ -396,13 +427,63 @@ function BoxDetail({ box, files, onViewFile, ...qoderProps }) {
         </Card>
       )}
 
+      {/* OCR Details */}
+      {box.details && (
+        <Card className="p-4 bg-amber-50/50 border-amber-200 mb-4" data-qoder-id="qel-p-4-4cdf6423" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-p-4-4cdf6423&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;p-4&quot;,&quot;loc&quot;:{&quot;line&quot;:432,&quot;column&quot;:9}}">
+          <div className="flex items-center gap-2 mb-3" data-qoder-id="qel-flex-c8e6e777" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-flex-c8e6e777&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;flex&quot;,&quot;loc&quot;:{&quot;line&quot;:433,&quot;column&quot;:11}}">
+            <CircuitBoard className="w-4 h-4 text-amber-600"  data-qoder-id="qel-w-4-1584d013" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-w-4-1584d013&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;w-4&quot;,&quot;loc&quot;:{&quot;line&quot;:434,&quot;column&quot;:13}}"/>
+            <span className="text-sm font-medium text-amber-800" data-qoder-id="qel-text-sm-6380a9f9" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-text-sm-6380a9f9&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;text-sm&quot;,&quot;loc&quot;:{&quot;line&quot;:435,&quot;column&quot;:13}}">OCR 识别详情</span>
+          </div>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs" data-qoder-id="qel-grid-8dc567dd" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-grid-8dc567dd&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;grid&quot;,&quot;loc&quot;:{&quot;line&quot;:437,&quot;column&quot;:11}}">
+            {box.details.cableSpec && (
+              <div data-qoder-id="qel-div-a8358645" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-div-a8358645&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;div&quot;,&quot;loc&quot;:{&quot;line&quot;:439,&quot;column&quot;:15}}">
+                <span className="text-muted-foreground" data-qoder-id="qel-text-muted-foreground-febfcaaf" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-text-muted-foreground-febfcaaf&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;text-muted-foreground&quot;,&quot;loc&quot;:{&quot;line&quot;:440,&quot;column&quot;:17}}">进线电缆：</span>
+                <span className="font-mono text-amber-900" data-qoder-id="qel-font-mono-0b5e72e0" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-font-mono-0b5e72e0&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;font-mono&quot;,&quot;loc&quot;:{&quot;line&quot;:441,&quot;column&quot;:17}}">{box.details.cableSpec}</span>
+              </div>
+            )}
+            {box.details.incomingWires && (
+              <div data-qoder-id="qel-div-a93587d8" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-div-a93587d8&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;div&quot;,&quot;loc&quot;:{&quot;line&quot;:445,&quot;column&quot;:15}}">
+                <span className="text-muted-foreground" data-qoder-id="qel-text-muted-foreground-01c20dff" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-text-muted-foreground-01c20dff&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;text-muted-foreground&quot;,&quot;loc&quot;:{&quot;line&quot;:446,&quot;column&quot;:17}}">进线根数：</span>
+                <span className="font-medium" data-qoder-id="qel-font-medium-3afe5346" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-font-medium-3afe5346&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;font-medium&quot;,&quot;loc&quot;:{&quot;line&quot;:447,&quot;column&quot;:17}}">{box.details.incomingWires}</span>
+              </div>
+            )}
+            {box.details.mainCircuit && (
+              <div data-qoder-id="qel-div-ba336404" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-div-ba336404&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;div&quot;,&quot;loc&quot;:{&quot;line&quot;:451,&quot;column&quot;:15}}">
+                <span className="text-muted-foreground" data-qoder-id="qel-text-muted-foreground-02c20f92" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-text-muted-foreground-02c20f92&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;text-muted-foreground&quot;,&quot;loc&quot;:{&quot;line&quot;:452,&quot;column&quot;:17}}">主用回路：</span>
+                <span className="font-mono text-amber-900" data-qoder-id="qel-font-mono-1d60cdcd" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-font-mono-1d60cdcd&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;font-mono&quot;,&quot;loc&quot;:{&quot;line&quot;:453,&quot;column&quot;:17}}">{box.details.mainCircuit}</span>
+              </div>
+            )}
+            {box.details.backupCircuit && (
+              <div data-qoder-id="qel-div-b9336271" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-div-b9336271&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;div&quot;,&quot;loc&quot;:{&quot;line&quot;:457,&quot;column&quot;:15}}">
+                <span className="text-muted-foreground" data-qoder-id="qel-text-muted-foreground-ffc20ad9" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-text-muted-foreground-ffc20ad9&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;text-muted-foreground&quot;,&quot;loc&quot;:{&quot;line&quot;:458,&quot;column&quot;:17}}">备用回路：</span>
+                <span className="font-mono text-amber-900" data-qoder-id="qel-font-mono-1a60c914" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-font-mono-1a60c914&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;font-mono&quot;,&quot;loc&quot;:{&quot;line&quot;:459,&quot;column&quot;:17}}">{box.details.backupCircuit}</span>
+              </div>
+            )}
+            {box.details.mainBreaker && (
+              <div data-qoder-id="qel-div-b4335a92" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-div-b4335a92&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;div&quot;,&quot;loc&quot;:{&quot;line&quot;:463,&quot;column&quot;:15}}">
+                <span className="text-muted-foreground" data-qoder-id="qel-text-muted-foreground-08c21904" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-text-muted-foreground-08c21904&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;text-muted-foreground&quot;,&quot;loc&quot;:{&quot;line&quot;:464,&quot;column&quot;:17}}">主开关：</span>
+                <span className="font-mono text-amber-900" data-qoder-id="qel-font-mono-1f630f8a" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-font-mono-1f630f8a&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;font-mono&quot;,&quot;loc&quot;:{&quot;line&quot;:465,&quot;column&quot;:17}}">{box.details.mainBreaker}</span>
+              </div>
+            )}
+            {box.details.powerParams && Object.keys(box.details.powerParams).length > 0 && (
+              <div className="col-span-2" data-qoder-id="qel-col-span-2-70c6e52d" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-col-span-2-70c6e52d&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;col-span-2&quot;,&quot;loc&quot;:{&quot;line&quot;:469,&quot;column&quot;:15}}">
+                <span className="text-muted-foreground" data-qoder-id="qel-text-muted-foreground-91baa1ea" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-text-muted-foreground-91baa1ea&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;text-muted-foreground&quot;,&quot;loc&quot;:{&quot;line&quot;:470,&quot;column&quot;:17}}">电气参数：</span>
+                {Object.entries(box.details.powerParams).map(([k, v]) => (
+                  <span key={k} className="font-mono text-amber-900 mr-3" data-qoder-id="qel-font-mono-1e630df7" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-font-mono-1e630df7&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;font-mono&quot;,&quot;loc&quot;:{&quot;line&quot;:472,&quot;column&quot;:19}}">{k}={v}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
+
       <Card className="p-4 bg-green-50/50 border-green-200" data-qoder-id="qel-p-4-52df6d95" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-p-4-52df6d95&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;p-4&quot;,&quot;loc&quot;:{&quot;line&quot;:413,&quot;column&quot;:7}}">
         <div className="flex items-center gap-2 mb-2" data-qoder-id="qel-flex-c2e6de05" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-flex-c2e6de05&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;flex&quot;,&quot;loc&quot;:{&quot;line&quot;:414,&quot;column&quot;:9}}">
           <CheckCircle2 className="w-4 h-4 text-green-600"  data-qoder-id="qel-w-4-a1db3756" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-w-4-a1db3756&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;w-4&quot;,&quot;loc&quot;:{&quot;line&quot;:415,&quot;column&quot;:11}}"/>
           <span className="text-sm font-medium text-green-800" data-qoder-id="qel-text-sm-617e683c" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-text-sm-617e683c&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;text-sm&quot;,&quot;loc&quot;:{&quot;line&quot;:416,&quot;column&quot;:11}}">AI 识别结果</span>
         </div>
         <p className="text-xs text-green-700" data-qoder-id="qel-text-xs-a936d592" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-text-xs-a936d592&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;text-xs&quot;,&quot;loc&quot;:{&quot;line&quot;:418,&quot;column&quot;:9}}">
-          该配电箱的编号、名称和部位由 AI 从图纸中自动识别，置信度 95%+。请查看原始图纸进行人工复核。
+          该配电箱的编号、名称和部位由 AI 从图纸中通过 OCR 自动识别。请查看原始图纸进行人工复核。
         </p>
       </Card>
     </div>
@@ -488,8 +569,11 @@ export default function DashboardPage(qoderProps) {
     setView('processing')
   }
 
-  const handleProcessingDone = useCallback(() => {
-    const newBoxes = processingFiles.flatMap(f => fakeRecognize(f.name))
+  const handleProcessingDone = useCallback((ocrResults) => {
+    // Use real OCR results if available, otherwise fall back to fake recognition
+    const newBoxes = ocrResults && ocrResults.length > 0
+      ? ocrResults
+      : processingFiles.flatMap(f => fakeRecognize(f.name))
     setProjectFiles(prev => ({
       ...prev,
       [activeProjectId]: [...(prev[activeProjectId] || []), ...processingFiles],
