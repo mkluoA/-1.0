@@ -301,6 +301,9 @@ function parseThreeLayers(lines, fullText) {
     }
   }
 
+  const addedMCCB = new Set()  // 已添加的 MCCB 回路 key
+  const addedMCB = new Set()   // 已添加的 MCB 回路 key
+
   /* ── 3. 支路信息 ── */
   for (const line of lines) {
     const lt = line.map(w => w.text).join(' ')
@@ -319,6 +322,11 @@ function parseThreeLayers(lines, fullText) {
       // 找到对应的回路编号（同行或相邻行的 +B1-ATLP-WX）
       const wlM = ltClean.match(/\+?[Bb]\d[-一][A-Za-z]+[-一]W\d+/)
 
+      // 去重 key: 优先用回路编号，其次用末端箱号
+      const mccbKey = (wlM ? wlM[0].replace(/一/g, '-') : '') || downstreamBox || ''
+      if (mccbKey && addedMCCB.has(mccbKey)) continue
+      if (mccbKey) addedMCCB.add(mccbKey)
+
       const entry = {
         回路编号: wlM ? wlM[0].replace(/一/g, '-') : '',
         末端箱号: downstreamBox,
@@ -331,16 +339,18 @@ function parseThreeLayers(lines, fullText) {
         末端类型: '下级配电箱',
       }
 
-      // 避免重复添加
-      if (!result.支路信息.主回路下级_送下级箱_MCCB.find(e => e.回路编号 === entry.回路编号 && entry.回路编号)) {
-        result.支路信息.主回路下级_送下级箱_MCCB.push(entry)
-      }
+      result.支路信息.主回路下级_送下级箱_MCCB.push(entry)
     }
 
     // ── MCB 支路（末端设备）──
     const mcbM = ltClean.match(BREAKER_MCB_RE)
     const wlM2 = ltClean.match(/WL\s*(\d+)/i)
-    if (wlM2 || mcbM) {
+    const wlId = wlM2 ? 'WL' + wlM2[1] : ''
+
+    // 只有有 WL 编号的才添加（避免无编号的 MCB 行重复添加）
+    if (wlId && !addedMCB.has(wlId)) {
+      addedMCB.add(wlId)
+
       const leakage = detectLeakage(ltClean)
       const cableM = ltClean.match(CABLE_RE)
       const cable = cableM ? cableM[0].replace(/一/g, '-').replace(/[×✕╳]/g, 'x') : ''
