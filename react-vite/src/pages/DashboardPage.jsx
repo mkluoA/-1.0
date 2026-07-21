@@ -9,15 +9,14 @@ import {
   Search, Download, Plus, FolderOpen, Trash2,
   CheckCircle2, AlertCircle, MoreHorizontal, X,
   Settings, Bell, Layers, Eye, ArrowLeft, Home,
-  Box, CircuitBoard, FileImage, File, ZoomIn, ZoomOut
+  Box, FileImage, File, ZoomIn, ZoomOut
 } from 'lucide-react'
 
 /* ─── helpers ─── */
-const ACCEPTED_TYPES = '.dwg,.dxf,.pdf,.png,.jpg,.jpeg,.bmp,.tif,.tiff'
+const ACCEPTED_TYPES = '.pdf,.png,.jpg,.jpeg,.bmp,.tif,.tiff'
 
 function getFileCategory(name) {
   const ext = name.split('.').pop().toLowerCase()
-  if (['dwg', 'dxf'].includes(ext)) return 'cad'
   if (ext === 'pdf') return 'pdf'
   if (['png', 'jpg', 'jpeg', 'bmp', 'tif', 'tiff'].includes(ext)) return 'image'
   return 'other'
@@ -25,7 +24,6 @@ function getFileCategory(name) {
 
 function categoryIcon(cat) {
   switch (cat) {
-    case 'cad': return CircuitBoard
     case 'pdf': return FileText
     case 'image': return FileImage
     default: return File
@@ -34,7 +32,6 @@ function categoryIcon(cat) {
 
 function categoryColor(cat) {
   switch (cat) {
-    case 'cad': return 'text-blue-600 bg-blue-50'
     case 'pdf': return 'text-red-600 bg-red-50'
     case 'image': return 'text-emerald-600 bg-emerald-50'
     default: return 'text-muted-foreground bg-muted'
@@ -130,7 +127,7 @@ function FileViewer({ file, onClose, ...qoderProps }) {
       </div>
 
       {/* Content */}
-      {cat === 'cad' ? (
+      {cat === 'pdf' ? (
         <div className="flex-1 flex flex-col overflow-hidden" data-qoder-id="qel-cad-container" data-qoder-source="{&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;FileViewer&quot;,&quot;elementRole&quot;:&quot;cad-container&quot;}">
           <CADViewer file={file}  data-qoder-id="qel-cadviewer-496f30eb" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-cadviewer-496f30eb&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;FileViewer&quot;,&quot;elementRole&quot;:&quot;cadviewer&quot;,&quot;loc&quot;:{&quot;line&quot;:135,&quot;column&quot;:11}}"/>
         </div>
@@ -143,9 +140,6 @@ function FileViewer({ file, onClose, ...qoderProps }) {
             className="max-w-none shadow-lg"
             style={{ transform: `scale(${zoom})`, transformOrigin: 'center', transition: 'transform 0.15s' }}
            data-qoder-id="qel-max-w-none-0b61757d" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-max-w-none-0b61757d&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;FileViewer&quot;,&quot;elementRole&quot;:&quot;max-w-none&quot;,&quot;loc&quot;:{&quot;line&quot;:134,&quot;column&quot;:11}}"/>
-        )}
-        {cat === 'pdf' && url && (
-          <iframe src={url} className="w-full h-full bg-white rounded shadow-lg" title={file.name}  data-qoder-id="qel-w-full-319c9a7f" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-w-full-319c9a7f&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;FileViewer&quot;,&quot;elementRole&quot;:&quot;w-full&quot;,&quot;loc&quot;:{&quot;line&quot;:142,&quot;column&quot;:11}}"/>
         )}
         {cat === 'other' && (
           <div className="bg-white rounded-xl p-12 text-center max-w-md shadow-lg" data-qoder-id="qel-bg-white-9bed4d38" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-bg-white-9bed4d38&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;FileViewer&quot;,&quot;elementRole&quot;:&quot;bg-white&quot;,&quot;loc&quot;:{&quot;line&quot;:151,&quot;column&quot;:11}}">
@@ -189,11 +183,8 @@ function UploadArea({ onFilesAdded, ...qoderProps }) {
         <h3 className="text-lg font-semibold mb-2" data-qoder-id="qel-text-lg-a51e5d52" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-text-lg-a51e5d52&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;UploadArea&quot;,&quot;elementRole&quot;:&quot;text-lg&quot;,&quot;loc&quot;:{&quot;line&quot;:194,&quot;column&quot;:9}}">上传配电箱图纸</h3>
         <p className="text-sm text-muted-foreground mb-4" data-qoder-id="qel-text-sm-1102edef" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-text-sm-1102edef&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;UploadArea&quot;,&quot;elementRole&quot;:&quot;text-sm&quot;,&quot;loc&quot;:{&quot;line&quot;:195,&quot;column&quot;:9}}">拖拽文件到此处，或点击选择文件</p>
         <div className="flex items-center justify-center gap-3 mb-4" data-qoder-id="qel-flex-d87493a4" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-flex-d87493a4&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;UploadArea&quot;,&quot;elementRole&quot;:&quot;flex&quot;,&quot;loc&quot;:{&quot;line&quot;:196,&quot;column&quot;:9}}">
-          <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-blue-50 text-blue-700" data-qoder-id="qel-inline-flex-1a0b8eb6" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-inline-flex-1a0b8eb6&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;UploadArea&quot;,&quot;elementRole&quot;:&quot;inline-flex&quot;,&quot;loc&quot;:{&quot;line&quot;:197,&quot;column&quot;:11}}">
-            <CircuitBoard className="w-3 h-3"  data-qoder-id="qel-w-3-08d35908" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-w-3-08d35908&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;UploadArea&quot;,&quot;elementRole&quot;:&quot;w-3&quot;,&quot;loc&quot;:{&quot;line&quot;:198,&quot;column&quot;:13}}"/>CAD (.dwg/.dxf)
-          </span>
           <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-red-50 text-red-700" data-qoder-id="qel-inline-flex-180b8b90" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-inline-flex-180b8b90&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;UploadArea&quot;,&quot;elementRole&quot;:&quot;inline-flex&quot;,&quot;loc&quot;:{&quot;line&quot;:200,&quot;column&quot;:11}}">
-            <FileText className="w-3 h-3"  data-qoder-id="qel-w-3-3c9b1e9a" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-w-3-3c9b1e9a&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;UploadArea&quot;,&quot;elementRole&quot;:&quot;w-3&quot;,&quot;loc&quot;:{&quot;line&quot;:201,&quot;column&quot;:13}}"/>PDF
+            <FileText className="w-3 h-3"  data-qoder-id="qel-w-3-3c9b1e9a" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-w-3-3c9b1e9a&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;UploadArea&quot;,&quot;elementRole&quot;:&quot;w-3&quot;,&quot;loc&quot;:{&quot;line&quot;:201,&quot;column&quot;:13}}"/>PDF 图纸
           </span>
           <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-emerald-50 text-emerald-700" data-qoder-id="qel-inline-flex-260ba19a" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-inline-flex-260ba19a&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;UploadArea&quot;,&quot;elementRole&quot;:&quot;inline-flex&quot;,&quot;loc&quot;:{&quot;line&quot;:203,&quot;column&quot;:11}}">
             <FileImage className="w-3 h-3"  data-qoder-id="qel-w-3-2411f036" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-w-3-2411f036&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;UploadArea&quot;,&quot;elementRole&quot;:&quot;w-3&quot;,&quot;loc&quot;:{&quot;line&quot;:204,&quot;column&quot;:13}}"/>图片
