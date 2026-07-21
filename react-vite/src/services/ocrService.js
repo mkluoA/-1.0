@@ -19,8 +19,8 @@
  */
 import * as pdfjsLib from 'pdfjs-dist'
 
-/* 百度 OCR 代理地址 */
-const OCR_PROXY_URL = 'http://127.0.0.1:3001/api/ocr'
+/* 百度 OCR 代理地址（内嵌在 Vite dev server 中） */
+const OCR_PROXY_URL = '/api/ocr'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`

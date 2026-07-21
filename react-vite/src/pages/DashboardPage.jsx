@@ -53,38 +53,6 @@ const typeColors = {
 }
 
 /* ─── generate mock recognition result from file name ─── */
-function fakeRecognize(fileName) {
-  const base = fileName.replace(/\.[^.]+$/, '')
-  const boxes = []
-  const r = (n) => Math.floor(Math.random() * n) + 1
-  const l1Id = `AL-${String(r(9)).padStart(2, '0')}`
-  const l1 = {
-    id: l1Id, name: `${base} 总配电箱`, type: '一级箱',
-    location: '配电间', circuits: r(8) + 4, sourceFile: fileName,
-    children: [],
-  }
-  const l2Count = r(3) + 1
-  for (let i = 0; i < l2Count; i++) {
-    const l2Id = `${l1Id}-${String(i + 1).padStart(2, '0')}`
-    const l2 = {
-      id: l2Id, name: `${i + 1}F ${['照明', '动力', '应急'][i % 3]}配电箱`,
-      type: '二级箱', location: `${i + 1}层电气井`, circuits: r(6) + 2,
-      sourceFile: fileName, children: [],
-    }
-    const l3Count = r(2)
-    for (let j = 0; j < l3Count; j++) {
-      const l3Id = `${l2Id}-${String(j + 1).padStart(2, '0')}`
-      l2.children.push({
-        id: l3Id, name: `${i + 1}F-${j + 1} ${['照明', '插座', '空调'][j % 3]}控制箱`,
-        type: j === 0 ? '三级箱' : '控制箱', location: `${i + 1}层`, circuits: r(4) + 1,
-        sourceFile: fileName, children: [],
-      })
-    }
-    l1.children.push(l2)
-  }
-  boxes.push(l1)
-  return boxes
-}
 
 /* ─── File Viewer Component ─── */
 function FileViewer({ file, onClose, ...qoderProps }) {
@@ -378,6 +346,21 @@ function BoxDetail({ box, files, onViewFile, ...qoderProps }) {
   )
 
   const sourceFile = files.find(f => f.name === box.sourceFile)
+
+  // Error state: OCR failed
+  if (box.error) {
+    return (
+      <div className="p-5 overflow-auto" data-qoder-id="qel-p-5-b7345de0" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-p-5-b7345de0&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;p-5&quot;,&quot;loc&quot;:{&quot;line&quot;:353,&quot;column&quot;:7}}">
+        <div className="flex items-center gap-2 mb-4" data-qoder-id="qel-flex-a7beb522" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-flex-a7beb522&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;flex&quot;,&quot;loc&quot;:{&quot;line&quot;:354,&quot;column&quot;:9}}">
+          <AlertCircle className="w-5 h-5 text-red-500"  data-qoder-id="qel-w-5-5fa57b32" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-w-5-5fa57b32&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;w-5&quot;,&quot;loc&quot;:{&quot;line&quot;:355,&quot;column&quot;:11}}"/>
+          <span className="text-sm font-medium text-red-700" data-qoder-id="qel-text-sm-09bac834" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-text-sm-09bac834&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;text-sm&quot;,&quot;loc&quot;:{&quot;line&quot;:356,&quot;column&quot;:11}}">{box.id}</span>
+        </div>
+        <Card className="p-4 bg-red-50 border-red-200" data-qoder-id="qel-p-4-323e0a6e" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-p-4-323e0a6e&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;p-4&quot;,&quot;loc&quot;:{&quot;line&quot;:358,&quot;column&quot;:9}}">
+          <p className="text-sm text-red-700" data-qoder-id="qel-text-sm-ba3115d6-2" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-text-sm-ba3115d6-2&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;text-sm&quot;,&quot;loc&quot;:{&quot;line&quot;:359,&quot;column&quot;:11}}">{box.error}</p>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="p-5 overflow-auto" data-component="box-detail" data-qoder-id="qel-box-detail-1d817f3c" data-qoder-source="{&quot;qoderId&quot;:&quot;qel-box-detail-1d817f3c&quot;,&quot;filePath&quot;:&quot;react-vite/src/pages/DashboardPage.jsx&quot;,&quot;componentName&quot;:&quot;BoxDetail&quot;,&quot;elementRole&quot;:&quot;box-detail&quot;,&quot;loc&quot;:{&quot;line&quot;:366,&quot;column&quot;:5}}">
@@ -698,10 +681,23 @@ export default function DashboardPage(qoderProps) {
   }
 
   const handleProcessingDone = useCallback((ocrResults) => {
-    // Use real OCR results if available, otherwise fall back to fake recognition
-    const newBoxes = ocrResults && ocrResults.length > 0
-      ? ocrResults
-      : processingFiles.flatMap(f => fakeRecognize(f.name))
+    // Only use real OCR results - never generate fake data
+    let newBoxes = ocrResults && ocrResults.length > 0 ? ocrResults : []
+
+    // If OCR failed, create minimal placeholder with error flag
+    if (newBoxes.length === 0) {
+      newBoxes = processingFiles.map(f => ({
+        id: f.name.replace(/\.[^.]+$/, ''),
+        name: 'OCR 识别失败',
+        type: '二级箱',
+        location: '',
+        circuits: 0,
+        sourceFile: f.name,
+        children: [],
+        error: 'OCR 识别失败，请确认 OCR 代理服务已启动（node server/ocr-proxy.js）并重新上传图纸。',
+      }))
+    }
+
     setProjectFiles(prev => ({
       ...prev,
       [activeProjectId]: [...(prev[activeProjectId] || []), ...processingFiles],
