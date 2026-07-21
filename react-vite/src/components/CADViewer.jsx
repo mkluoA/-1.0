@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import * as pdfjsLib from 'pdfjs-dist'
 
-/* ── Configure PDF.js worker (CDN) ── */
+/* ── Configure PDF.js worker (CDN, well-tested for v4) ── */
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`
 
@@ -44,7 +44,9 @@ export default function CADViewer({ file, className, style, ...qoderProps }) {
       setError(null)
       try {
         const buf = await file.arrayBuffer()
-        const doc = await pdfjsLib.getDocument({ data: buf }).promise
+        const data = new Uint8Array(buf)
+        const loadingTask = pdfjsLib.getDocument({ data })
+        const doc = await loadingTask.promise
         if (cancelled) { doc.destroy(); return }
         pdfDocRef.current = doc
         setTotalPages(doc.numPages)
@@ -58,7 +60,7 @@ export default function CADViewer({ file, className, style, ...qoderProps }) {
       } catch (e) {
         console.error('PDF load error:', e)
         if (!cancelled) {
-          setError('无法加载 PDF 文件')
+          setError('无法加载 PDF 文件：' + (e?.message || e?.name || '未知错误'))
           setLoading(false)
         }
       }
